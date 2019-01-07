@@ -1,0 +1,10 @@
+version: '3.5'
+
+services:
+
+  sample:
+    build: .
+    environment:
+      - LOG_LEVEL=info
+    ports:
+      - 3000:3000
