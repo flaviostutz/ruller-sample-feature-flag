@@ -1,0 +1,41 @@
+{
+    "_config": {
+        "seed ": 123,
+        "default_condition": true
+    },
+    "_groups": {
+        "showTransfersScreen":["72373287","238823783","3232423","44444"],
+        "specialCustomers":"/opt/specialCustomers.txt"
+    },
+    "redirect": [
+        {
+            "fromId":"paymentscreen",
+            "targetId":"/tela/funcionalidade-indisponivel",
+            "_condition": "input:_ip_city=='Brasília'"
+        },
+        {
+            "fromId":"minhasfinancashome",
+            "targetId":"minhasfinancashomeB",
+            "_condition": "randomPerc(50, input:customerid)"
+        },
+        {
+            "screenId":"minhasfinancashome",
+            "targetId":"/tela/minhas-financas",
+            "_condition": "versionCheck(input:app_version, '<=4.3')"
+        }
+    ],
+    "hide": [
+        {
+            "screenId":"transferscreen",
+            "_condition": "contains(group:showTransfersScreen,input:customerid)"
+        },
+        {
+            "screenId":"accountscreen",
+            "_condition": "before('2020-04-30T23:32:21+00:00')"
+        },
+        {
+            "screenId":"specialcustomersscreen",
+            "_condition": "contains(group:specialCustomers,input:customerid) and randomPerc(10, input:customerid)"
+        }
+    ]
+}

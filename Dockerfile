@@ -19,9 +19,10 @@ RUN awk -F ',' '{print "BR," $4 "," $5}' /opt/Municipios.sql | sed -e "s/''/#/g"
 #add json rules and generate code for them
 ADD /domains.json /opt/
 ADD /menu.json /opt/
+ADD /screens.json /opt/
 RUN ruller-dsl-feature-flag \
     --log-level=info \
-    --source=/opt/domains.json,/opt/menu.json \
+    --source=/opt/domains.json,/opt/menu.json,/opt/screens.json \
     --target=/opt/rules.go \
     --condition-debug=true
 
@@ -45,6 +46,7 @@ COPY --from=BUILD /opt/Geolite2-City.mmdb /opt/
 COPY --from=BUILD /opt/city-state.csv /opt/
 ENV LOG_LEVEL=info
 ADD /customer-group1.txt /opt/customer-group1.txt
+ADD /specialCustomers.txt /opt/specialCustomers.txt
 ADD /startup.sh /
 CMD [ "sh", "-C", "/startup.sh" ]
 
