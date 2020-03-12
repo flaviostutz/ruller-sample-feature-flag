@@ -6,10 +6,11 @@ FROM flaviostutz/ruller-dsl-feature-flag as BUILD
 #Check https://www.maxmind.com/en/end-user-license-agreement
 #Download manually the database "GeoLite2 City"
 #Add to your workspace and uncomment the line below
-# ADD /GeoLite2-City.tar.gz /opt/
-# RUN cd /opt && \
-#     tar -xvf GeoLite2-City.tar.gz && \
-#     mv */GeoLite2-City.mmdb /opt/Geolite2-City.mmdb
+COPY /GeoLite2-City.tar.gz /opt/
+RUN ls /opt
+WORKDIR /opt
+RUN tar -xvf GeoLite2-City.tar.gz && \
+    mv */GeoLite2-City.mmdb /opt/Geolite2-City.mmdb
 
 #city state csv for Brazil
 RUN curl https://raw.githubusercontent.com/chandez/Estados-Cidades-IBGE/master/Municipios.sql --output /opt/Municipios.sql
@@ -40,7 +41,7 @@ RUN go get -v sample
 # FROM scratch
 FROM golang:1.10
 COPY --from=BUILD /go/bin/* /bin/
-# COPY --from=BUILD /opt/Geolite2-City.mmdb /opt/
+COPY --from=BUILD /opt/Geolite2-City.mmdb /opt/
 COPY --from=BUILD /opt/city-state.csv /opt/
 ENV LOG_LEVEL=info
 ADD /customer-group1.txt /opt/customer-group1.txt
