@@ -6,7 +6,7 @@
     },
     "_groups": {
         "engineersid":["12","34","32","33","333","211"],
-        "customers1":"/opt/customer-group1.txt"
+        "customers1":"/rules/customer-group1.txt"
     },
     "_items": [{
             "label": "menu1",

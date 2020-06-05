@@ -1,52 +1,63 @@
 #GENERATE CODE FROM SAMPLE JSON USING DSLTOOL
-FROM flaviostutz/ruller-dsl-feature-flag as BUILD
+FROM flaviostutz/ruller-dsl-feature-flag:1.2.1 as BUILD
+RUN apk add curl
+
+ARG MAXMIND_LICENSE_KEY
 
 #geolite database
 #Signup on https://dev.maxmind.com/geoip/geoip2/geolite2/
 #Check https://www.maxmind.com/en/end-user-license-agreement
-#Download manually the database "GeoLite2 City"
-#Add to your workspace and uncomment the line below
-COPY /GeoLite2-City.tar.gz /opt/
-RUN ls /opt
-WORKDIR /opt
-RUN tar -xvf GeoLite2-City.tar.gz && \
-    mv */GeoLite2-City.mmdb /opt/Geolite2-City.mmdb
+# download db if license is not empty
+ADD /download-geolite2-city.sh /
+RUN /download-geolite2-city.sh $MAXMIND_LICENSE_KEY
 
-#city state csv for Brazil
-RUN curl https://raw.githubusercontent.com/chandez/Estados-Cidades-IBGE/master/Municipios.sql --output /opt/Municipios.sql
-RUN awk -F ',' '{print "BR," $4 "," $5}' /opt/Municipios.sql | sed -e "s/''/#/g"  | sed -e "s/'//g" | sed -e "s/)//g" | sed -e "s/;//g" | sed -e s/", "/,/g | sed -e "s/#/'/g" > /opt/city-state.csv
+# download city state csv for Brazil
+RUN curl https://raw.githubusercontent.com/chandez/Estados-Cidades-IBGE/master/Municipios.sql --output Municipios.sql
+RUN awk -F ',' '{print "BR," $4 "," $5}' Municipios.sql | sed -e "s/''/#/g"  | sed -e "s/'//g" | sed -e "s/)//g" | sed -e "s/;//g" | sed -e s/", "/,/g | sed -e "s/#/'/g" > /opt/city-state.csv
 
-#add json rules and generate code for them
-ADD /domains.json /opt/
-ADD /menu.json /opt/
-ADD /screens.json /opt/
+
+#build cache warmup
+WORKDIR /app
+ADD /go.mod /app/
+ADD /go.sum /app/
+RUN go mod download
+
+
+#add json rules
+ADD /rules/ /app/
+
+
+RUN echo "Generate Golang code from DSL JSONs"
+#this executable needs /app/templates to be present
 RUN ruller-dsl-feature-flag \
     --log-level=info \
-    --source=/opt/domains.json,/opt/menu.json,/opt/screens.json \
-    --target=/opt/rules.go \
+    --source=/app/domains.json,/app/menu.json,/app/screens.json \
+    --target=/app/rules.go \
     --condition-debug=true
 
-#just for build cache optimization
-ADD /sample/main.dep $GOPATH/src/sample/main.go
-RUN go get -v sample
 
-#now build generated code
-RUN cat -n /opt/rules.go
-RUN cp /opt/rules.go $GOPATH/src/sample/
-ADD /sample/main.go  $GOPATH/src/sample/
-RUN go get -v sample
+#build generated code
+RUN echo "Generated code at /app/rules.go"
+RUN cat -n /app/rules.go
+ADD /main.go /app/
+RUN go build -o /bin/ruller-sample-feature-flag
 
 
 
 #RUNTIME CONTAINER
-# FROM scratch
-FROM golang:1.10
-COPY --from=BUILD /go/bin/* /bin/
-COPY --from=BUILD /opt/Geolite2-City.mmdb /opt/
-COPY --from=BUILD /opt/city-state.csv /opt/
+FROM golang:1.14.3-alpine3.11
 ENV LOG_LEVEL=info
-ADD /customer-group1.txt /opt/customer-group1.txt
-ADD /specialCustomers.txt /opt/specialCustomers.txt
+
+COPY --from=BUILD /bin/ruller-sample-feature-flag /bin/
+COPY --from=BUILD /opt/ /opt/
+# /opt/Geolite2-City.mmdb
+# /opt/city-state.csv
+
+RUN echo "Copy group text definition to where json rules expects"
+ADD /rules/customer-group1.txt /rules/
+ADD /rules/specialCustomers.txt /rules/
+
 ADD /startup.sh /
-CMD [ "sh", "-C", "/startup.sh" ]
+
+CMD [ "/startup.sh" ]
 
