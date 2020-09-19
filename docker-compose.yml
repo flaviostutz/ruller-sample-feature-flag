@@ -8,3 +8,11 @@ services:
       - LOG_LEVEL=info
     ports:
       - 3000:3000
+
+  nginx-cache-proxy:
+    image: flaviostutz/nginx-cache-proxy
+    ports:
+      - 8080:80
+      - 8443:443
+    environment:
+      - PROXY_PASS_URL=http://sample:3000/
