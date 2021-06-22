@@ -12,9 +12,9 @@ ADD /download-geolite2-city.sh /
 RUN /download-geolite2-city.sh $MAXMIND_LICENSE_KEY
 
 # download city state csv for Brazil
-RUN curl https://raw.githubusercontent.com/chandez/Estados-Cidades-IBGE/master/Municipios.sql --output Municipios.sql
+RUN curl https://raw.githubusercontent.com/chandez/Estados-Cidades-IBGE/master/sql/Municipios.sql --output Municipios.sql
 RUN awk -F ',' '{print "BR," $4 "," $5}' Municipios.sql | sed -e "s/''/#/g"  | sed -e "s/'//g" | sed -e "s/)//g" | sed -e "s/;//g" | sed -e s/", "/,/g | sed -e "s/#/'/g" > /opt/city-state.csv
-
+RUN cp Geolite2-City.mmdb /opt/
 
 #build cache warmup
 WORKDIR /app
