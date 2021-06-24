@@ -3,12 +3,14 @@ version: '3.5'
 services:
 
   sample:
-    build: .
-    environment:
-      - LOG_LEVEL=info
+    build:
+      context: .
+      args:
+        MAXMIND_LICENSE_KEY: ''
     ports:
       - 3000:3000
-
+    environment:
+      - LOG_LEVEL=info
   nginx-cache-proxy:
     image: flaviostutz/nginx-cache-proxy
     ports:
